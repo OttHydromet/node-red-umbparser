@@ -1,0 +1,46 @@
+<script type="text/javascript">
+    RED.nodes.registerType('umbcontroller',{
+        category: 'function',
+        color: '#a6bbcf',
+        defaults: {
+            name: {value:""},
+            dev_address: {value:"7001", required:true},
+            ip_address: {value:"192.168.0.10", required:true},
+            ip_port: {value:"4095", required:true},
+            channels: {value:"", type:"umbchannels"},
+        },
+        inputs:1,
+        outputs:1,
+        icon: "file.png",
+        label: function() {
+            return "UMB Controller";
+        },
+    });
+</script>
+
+<script type="text/html" data-template-name="umbcontroller" >
+    <body>
+    <div class="form-row" >
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name" placeholder="Devicename">
+    </div>
+    <div class="form-row">
+        <label for="node-input-dev_address"><i class="icon-tag"></i>Device Address</label>
+        <input type="text" id="node-input-dev_address" placeholder="Device address (hex)">
+    </div>
+    <div class="form-row">
+        <label for="node-input-ip_address"><i class="fa fa-globe"></i> Device IP</label>
+        <input type="text" id="node-input-ip_address" placeholder="ip.address" style="width:45%" dir="">
+        <span data-i18n="node-red:tcpin.label.port">Port</span>
+        <input type="text" id="node-input-ip_port" style="width:60px" dir="" placeholder="TCP Port">
+    </div>
+    <div class="form-row">
+        <label for="node-input-channels"><i class="icon-tag"></i> Channels</label>
+        <input type="text" id="node-input-channels">
+    </div>
+    </body>
+</script>
+
+<script type="text/html" data-help-name="umbgenerator">
+    <p>This is a generator for UMB frames</p>
+</script>
