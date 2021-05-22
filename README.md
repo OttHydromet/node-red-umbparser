@@ -6,9 +6,9 @@ The purpose of this node is to periodically poll and parse measurement data from
 
 ## UMB protocol details
 
-UMB stands for Universal Monitoring Bus. It basically is a RS485 based hardware 
-interface and protocoll, that is used by most meterological sensors from the 
-company Lufft / OTT Hydromet. 
+UMB stands for Universal Measurement Bus. It basically is a RS485 based hardware 
+interface and protocol, that is used by most meteorological sensors from the 
+company by Lufft / OTT Hydromet. 
 The UMB protocol that is used on these sensors is an open standard. There are 
 different variants available for ASCII and binary ouput.
 This node implements the **binary UMB** protocol.
@@ -17,13 +17,13 @@ For more details about the according sensors and the UMB protocol please visit: 
 
 ### What you need to know ###
 
-Important to know about UMB, is that it is a "Master-Slave" or "Controller-Device" protocol. This means that the bus topoligy featues the connection of different devices but **there can only be one controller**. The devices are not allowed to send data on the bus itself. Moreover the Controller sends a request to one device or a group of devices (broadcast). The according device then has a time slot to respond to this **request** with an according **response**.
+Important to know about UMB, is that it is a "Master-Slave" or "Controller-Device" protocol. This means that the bus topoligy featues the connection of different devices but **there can only be one controller**. The devices are not allowed to send data on the bus themselves. Moreover the Controller sends a request to one device or a group of devices (broadcast). The according device then has a time slot to respond to this **request** with an according **response**.
 
 
 
 #### Addressing
 
-Every device on the bus should have an address that is unique for the according hardware infrastructure.
+Every device on the bus should have an address that is unique.
 
 > **_NOTE:_** The address consist of a device and a group address. For more details, please refere to the protocol specification, that is mentioned above.
 
@@ -35,7 +35,7 @@ The Controller always has the address **0xF001**.
 
 ## Input
 
-The input needs ot have no data. It is just used as a trigger to query the configuration measurement data. 
+The input needs ot have no data. It is just used as a trigger to query the configured measurement data. 
 
 ## Output
 
@@ -97,7 +97,7 @@ the *umbframe* object contains all the parsed information:
   Parsed UMB status
 
 * **crc**
-  CRC within the UMB frame. The CRC is always parsed and verified. If a frame CRC is detected this is reported in an according *parserState*. Hence, this value is only set, when the UMB framing including the CRC was correct.
+  CRC within the UMB frame. The CRC is always parsed and verified. If a frame CRC error is detected this is reported in an according *parserState*. Hence, this value is only set, when the UMB framing including the CRC was correct.
 
 * **FromAddr**
 

@@ -281,14 +281,14 @@ class UMBParser
 
     /**
      * Parsing function.
-     * This function parses a binary stream for UMB data. The passed buffer 
-     * don't need to include the complate UMB frame and this function can 
-     * be called subsequently.
+     * This function parses a binary stream of UMB data. The parsed buffer doesn't need the complete 
+     * UMB frame, this function may be called repeatedly until the end of frame has been reached
      * @param {ArrayBuffer} curBuffer Current binary data
      */
     ParseReadBuf(curBuffer)
     {
-        // return immediately if readLen == 0, handleTransfer now calls the parser also when no characters received (Modbus RTU)
+        // return immediately if readLen == 0, handleTransfer now calls the parser also when  
+        // no characters received (Modbus RTU)
         if ((typeof curBuffer == ArrayBuffer) && (curBuffer.length == 0))
         {
             return;
@@ -602,8 +602,8 @@ class UMBParser
 
         for(let i=0; i<numChannels; i++)
         {
-            let curhannelView = new DataView(this.payload.buffer, index, 2);
-            let curChannel = curhannelView.getUint16(0, true);
+            let curChannelView = new DataView(this.payload.buffer, index, 2);
+            let curChannel = curChannelView.getUint16(0, true);
 
             index += 2;
             
