@@ -11,7 +11,7 @@ interface and protocol, that is used by most meteorological sensors from the
 company by Lufft / OTT Hydromet. 
 The UMB protocol that is used on these sensors is an open standard. There are 
 different variants available for ASCII and binary ouput.
-This node implements the **binary UMB** protocol.
+This node implements the **UMB binary** protocol.
 
 For more details about the according sensors and the UMB protocol please visit: https://www.lufft.com/download/manual-lufft-umb-protocol-en/ or https://www.otthydromet.com
 
@@ -41,10 +41,10 @@ The input needs ot have no data. It is just used as a trigger to query the confi
 
 If the node detects an error, the payload will just contain the according error message. 
 
-If the node could process properly payload of output pin mainly includes 2 objects:
+The output of a properly processed payload consists of mainly two objects:
 
 * **parserState**
-  This object represents the internal state of the parsed data. Usally this object should set to "finished", which indicates, that the configured requests have been processed propery and an according response could be parsed properly.
+  This object represents the internal state of the parsed data. Usually this object is set to "finished", which indicates, that the configured requests have been processed properly and an according response was parsed properly.
 * **umbframe**
   This object contains detailed data of the processed frame
 
@@ -101,7 +101,7 @@ the *umbframe* object contains all the parsed information:
 
 * **FromAddr**
 
-  Address of the devices the sent the response
+  Address of the devices the send the response
 
 * **ToAddr**
 
@@ -179,7 +179,7 @@ The configured channels will be queried from the device, everytime the input por
 
 ## FAQ
 
-**Q:** I get a "muitple measurements" warning
+**Q:** I get a "multiple measurements" warning
 **A:** Please verify that you don't query multiple channels with the same name (e.g. different units). See [frame details](#frame details) description
 
 ## Bugs
@@ -190,7 +190,7 @@ No bugs are known yet.
 
 ### Serial interface support
 
-Currently the node only support IP socket queries via UDP. Depending of the device, node-red is running a direct serial interface might be more useful, especially as there are only a few device from OTT Hydromet that feature ethernet or WiFi interfaces.
+Currently the node only support IP socket queries via TCP. Depending of the device, node-red is running a direct serial interface might be more useful, especially as there are only a few device from OTT Hydromet that feature ethernet or WiFi interfaces.
 
 ### Implement status request feature to ping a device
 
