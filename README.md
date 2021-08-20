@@ -101,7 +101,7 @@ the *umbframe* object contains all the parsed information:
 
 * **FromAddr**
 
-  Address of the devices the send the response
+  Address of the devices that sends the response
 
 * **ToAddr**
 
