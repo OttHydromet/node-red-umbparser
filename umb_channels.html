@@ -1,0 +1,160 @@
+<script type="text/javascript">
+    RED.nodes.registerType('umbchannels',{
+        category: 'config',
+        color: '#a6bbcf',
+        defaults: {
+            name: {value: ""},
+            unitsystem: {value:"metric", required:true},
+            channels: {value: [
+                {enabled:false, ch:"", chname:"", chunit:""}]},
+        },
+        icon: "file.png",
+        label: function() {
+            if(this.name != undefined)
+            {
+                return this.name;
+            }
+        },
+        oneditprepare: function () {
+            var node = this;
+            console.log("config window openend: " + node.channels);
+            $("#channellist-loader").hide();
+            $("#node-config-input-channellist").editableList({
+                addItem: function(container, i, channel) {
+                    var row = $('<div/>').appendTo(container);
+                    var chena = $('<input/>',{id:"node-config-input-ch-ena-"+i,type:"checkbox", style:"margin:3px; width:10px;vertical-align:middle"}).appendTo(row);
+                    $('<label/>',{for:"node-config-input-ch-"+i, style:"margin:3px; margin-left:7px; width:auto; vertical-align:middle"}).text("#").appendTo(row);
+                    var ch = $('<input/>',{id:"node-config-input-ch-"+i,type:"text", style:"width:60px; vertical-align:middle"}).appendTo(row);
+                    $('<label/>',{for:"node-config-input-chname-"+i, style:"margin:3px; margin-left:7px; width:auto; vertical-align:middle"}).text("Name").appendTo(row);
+                    var chname = $('<input/>',{id:"node-config-input-chname-"+i, type:"text", style:"width:auto; vertical-align:middle"}).appendTo(row);
+                    $('<label/>',{for:"node-config-input-chunit-"+i, style:"margin:3px; margin-left:7px; width:auto; vertical-align:middle"}).text("Unit").appendTo(row);
+                    var chunit = $('<input/>',{id:"node-config-input-chunit-"+i, type:"text", style:"width:50px; vertical-align:middle"}).appendTo(row);
+                    ch.val(channel.ch);
+                    chname.val(channel.chname);
+                    chena.prop("checked", channel.enabled);
+                    chunit.val(channel.chunit);
+                },
+                removeItem: function(opt) {
+                },
+                sortItems: function(rules) {
+                },
+                sortable: false,
+                removable: true
+            }).css('min-height','60px').css('min-width','450px').css('height','auto');
+            
+            console.log("channel-list: " + JSON.stringify(node.channels));
+            for (var i=0;i<this.channels.length;i++) {
+                var channel = this.channels[i];
+                $("#node-config-input-channellist").editableList('addItem', channel);
+            }
+        
+            $("#node-config-lookup-channels").click(function() {
+                $("#node-config-lookup-channels").addClass('disabled');
+                $("#node-config-input-channellist").editableList("empty");
+                $("#channellist-loader").show();
+                $.getJSON('umbchannels', '&unitsystem=' + $("#node-config-input-unitsystem").val(), function(chlist) {
+                    $("#node-config-lookup-channels").removeClass('disabled');
+                    $("#channellist-loader").hide();
+                    if(chlist.error == undefined) {
+                        $("#node-config-input-channellist").editableList("empty");
+                        $.each(chlist.channels.value, function(i, channel) {
+                            $("#node-config-input-channellist").editableList('addItem', channel);
+                        });
+                        $("#node-config-input-name").val(chlist.name.value);
+                    }
+                    else {
+                        var myNotification = RED.notify(chlist.error, {
+                            modal: true,
+                            fixed: true,
+                            type: 'error',
+                            buttons: [
+                                {
+                                    text: "ok",
+                                    click: function(e) {
+                                        myNotification.close();
+                                    }
+                                },
+                            ]
+                        })
+                    }
+                });
+            });
+        },
+        oneditsave: function() {
+            var channels = $("#node-config-input-channellist").editableList('items');
+            var node = this;
+            var chArray = [];
+            channels.each(function(i) {
+                var deviceElement = $(this);
+                var chena = deviceElement.find("#node-config-input-ch-ena-"+i).prop("checked");
+                var ch = deviceElement.find("#node-config-input-ch-"+i).val();
+                var chname = deviceElement.find("#node-config-input-chname-"+i).val();
+                var chunit = deviceElement.find("#node-config-input-chunit-"+i).val();
+                console.log(ch, chname);
+                var d = {};
+                d['enabled']= chena;
+                d['ch']=ch;
+                d['chname']=chname;
+                d['chunit']=chunit;
+                console.log(d);
+                chArray.push(d);
+            });
+            node.channels = chArray;
+            console.log("channel-list: " + JSON.stringify(node.channels));
+        },
+    });
+</script>
+
+<style type="text/css">
+    .loader {
+        border: 16px solid #f3f3f3;
+        border-top: 16px solid #3498db;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        animation: spin 2s linear infinite;
+        position:absolute;
+        margin-left: auto;
+        margin-right: auto;
+        top: 100px;
+        left: 0;
+        right: 0;
+        text-align: center;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<script type="text/html" data-template-name="umbchannels" >
+    <body>
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="icon-bookmark"></i> Name</label>
+        <input type="text" id="node-config-input-name">
+    </div>
+    <div class="form-row">
+
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-channellist"><i class="icon-tag"></i> Channels</label>
+        <a id="node-config-lookup-channels" class="red-ui-button">
+            <i class="fa fa-download"></i>
+        </a>
+        <select type="text" id="node-config-input-unitsystem">
+            <option value="metric">metric</option>
+            <option value="imperial">imperial</option>
+            <option value="all">all</option>
+        </select>
+    </div>
+    <div class="form-row" style="position: relative;">
+        <div id="channellist-loader" class="loader"></div>
+        <div id="node-config-input-channellist"></div>
+    </div>
+    </body>
+</script>
+
+<script type="text/html" data-help-name="umbgenerator">
+    <p>This is a generator for UMB frames</p>
+</script>
