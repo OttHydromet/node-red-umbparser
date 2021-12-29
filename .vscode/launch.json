@@ -26,7 +26,6 @@
                 "<node_internals>/**"
             ],
             "program": "/opt/homebrew/bin/node-red"
-            //"program": "node-red"
         }
     ]
 }
