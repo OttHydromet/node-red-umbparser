@@ -8,7 +8,7 @@
             "type": "node",
             "request": "launch",
             "name": "Mocha Tests",
-            "program": "/Users/marteng/.node-red/node_modules/mocha/bin/_mocha",
+            "program": "./node_modules/mocha/bin/mocha",
             "args": [
                 "${workspaceFolder}/test"
             ],
@@ -25,7 +25,8 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "/usr/local/bin/node-red"
+            "program": "/opt/homebrew/bin/node-red"
+            //"program": "node-red"
         }
     ]
 }
