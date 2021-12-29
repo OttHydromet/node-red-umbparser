@@ -37,7 +37,7 @@ const FRAME_STATE =
 const PAR_STATE =
 {
     PARSER_IDLE : 'idle',
-    PARSER_PROCESSING : 'prcoessing',
+    PARSER_PROCESSING : 'processing',
     PARSER_ERROR : 'error',
     PARSER_CRCERROR : 'crc_error',
     PARSER_FINISHED : 'finished',
@@ -294,10 +294,9 @@ class UMBParser
             return;
         }
 
-        // Push curent data
-        this.readBuffer = curBuffer;
+        // Push current data
+        this.readBuffer.push.apply(this.readBuffer, curBuffer);
 
-        this.parsingIdx = 0;
         while(this.parsingIdx < this.readBuffer.length)
         {
             switch(this.frameState)
@@ -388,7 +387,7 @@ class UMBParser
                     this.frameState = FRAME_STATE.PAR_ETX;
                     /* @note: Fall-Through!! */
                 }
-                /* no break */
+                /* no break */                
     
             case FRAME_STATE.PAR_ETX:
                 if(this.readBuffer[this.parsingIdx] == umb_consts.UMBFRAME_VAL.ETX)
