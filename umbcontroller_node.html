@@ -5,6 +5,7 @@
         defaults: {
             name: {value:""},
             dev_address: {value:"7001", required:true},
+            com_intf: {value:"0", required:true},
             ip_address: {value:"192.168.0.10", required:true},
             ip_port: {value:"9750", required:true},
             sp_tty: {value:"", required:false},
@@ -30,6 +31,18 @@
                 console.log("selected tty:" + node.sp_tty);
                 sp_list.val(node.sp_tty).change();
             });
+
+            $("#node-input-com_intf").typedInput({
+                types: [
+                    {
+                        value: "com_intf",
+                        options: [
+                            { value: "0", label: "Serial"},
+                            { value: "1", label: "IP"},
+                        ]
+                    }
+                ]
+            })
         },
         oneditsave: function() {
             var node = this;
@@ -73,10 +86,10 @@
         <input type="text" id="node-input-channels">
     </div>
 
-     <span class="button-group">
-        <button type="button" class="red-ui-button toggle selected my-button-group">Serial</button>
-        <button type="button" class="red-ui-button toggle my-button-group">IP</button>
-    </span>
+    <div class="form-row">
+        <label for="node-input-com_intf"><i class="icon-tag"></i> com_intf</label>
+        <input id="node-input-com_intf" type="text">
+    </div>
      
     <fieldset class="groupbox">
         <legend class="groupbox-legend">

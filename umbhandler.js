@@ -89,13 +89,14 @@ class UMBHandler
 {
     /**
      * 
-     * @param {node} node 
-     * @param {int} address 
-     * @param {string} ip_port 
-     * @param {int} ip_address 
-     * @param {string} sp_tty
+     * @param {node}    node        Reference to Node-Red instrance
+     * @param {int}     address     Device-Adresse of the device to communicate with
+     * @param {string}  ip_port     IP-Port setting for IP communication
+     * @param {int}     ip_address  Ip-Address for IP communication
+     * @param {string}  sp_tty      TTY com_intf for serial communifcation
+     * @param {int}     com_intf   Communication-com_intf to be used (0: Serial, 1: IP)
      */
-    constructor(node, address, ip_port, ip_address, sp_tty)
+    constructor(node, address, ip_port, ip_address, sp_tty, com_intf)
     {   
         var self = this;
 
@@ -104,6 +105,7 @@ class UMBHandler
         this.ip_port = ip_port;
         this.ip_address = ip_address;
         this.sp_tty = sp_tty;     
+        this.com_intf = com_intf;
 
         this.umbparser = new mod_umbparser.UMBParser(this.node);
 
@@ -113,13 +115,17 @@ class UMBHandler
             l_emitter= new EventEmitter();
         }
 
-        if(l_client == undefined) {
-            l_client = new UMBSocket(this.node, l_emitter);
+        if((l_client == undefined) && (com_intf == 1)) {
+            l_client = new UMBSocket(this.node, l_emitter, this.umbparser);
         }
     }
     
     async syncTransfer(umbreq) {
-        return this.syncTransfer_SERIAL(umbreq);
+        if(this.com_intf == 1) {
+            return this.syncTransfer_NET(umbreq);
+        } else {
+            return this.syncTransfer_SERIAL(umbreq);
+        }
     }
 
     async syncTransfer_SERIAL(umbreq) {
