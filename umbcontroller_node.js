@@ -21,7 +21,7 @@ var l_ip_address = 0
 var l_ip_port = 0;
 var l_com_intf;
 var l_sp_tty;
-var l_sp_baudrate;
+var l_sp_baud;
 var l_sp_parity;
 var l_com_intf;
 
@@ -90,7 +90,7 @@ module.exports = function(RED) {
         l_ip_port = config.ip_port;
         l_com_intf = config.com_intf;
         l_sp_tty = config.sp_tty;
-        l_sp_baudate = config.sp_baudrate;
+        l_sp_baud = config.sp_baud;
         l_sp_parity = config.sp_parity;
         l_com_intf = config.com_intf;
         l_node = this;
@@ -106,7 +106,13 @@ module.exports = function(RED) {
         }
         
         let umbgen = new mod_umbparser.UMBGenerator(this);
-        let umbhandler = new mod_umbhandler.UMBHandler(l_node, l_dev_address, l_ip_port, l_ip_address, l_sp_tty, l_com_intf);
+        let umbhandler = new mod_umbhandler.UMBHandler(l_node, l_dev_address, l_com_intf, { 
+            ip_address: l_ip_address, 
+            ip_port:    l_ip_port,
+            sp_tty:     l_sp_tty,
+            sp_baud:    l_sp_baud,
+            sp_parity:  l_sp_parity,
+        });
 
         l_node.on('input', function(msg) {
             let umbreq = umbgen.createMultiChReq(l_dev_address, this.query_channels);
@@ -143,7 +149,13 @@ module.exports = function(RED) {
     // Register internal URL to query channel list (used by channel_list config node)
     RED.httpAdmin.get("/umbchannels", RED.auth.needsPermission('umbchannels.read'), function(req,res) {
         let umbgen = new mod_umbparser.UMBGenerator(l_node);
-        let umbhandler = new mod_umbhandler.UMBHandler(l_node, l_dev_address, l_ip_port, l_ip_address, l_sp_tty, l_com_intf);
+        let umbhandler = new mod_umbhandler.UMBHandler(l_node, l_dev_address, l_com_intf, { 
+            ip_address: l_ip_address, 
+            ip_port:    l_ip_port,
+            sp_tty:     l_sp_tty,
+            sp_baud:    l_sp_baud,
+            sp_parity:  l_sp_parity,
+        });
 
         let cfg_unitsystem = new URLSearchParams(req.url).get("unitsystem");
 

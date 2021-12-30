@@ -87,24 +87,30 @@ class UMBSocket extends net.Socket
 
 class UMBHandler
 {
+    
+
     /**
      * 
      * @param {node}    node        Reference to Node-Red instrance
      * @param {int}     address     Device-Adresse of the device to communicate with
-     * @param {string}  ip_port     IP-Port setting for IP communication
-     * @param {int}     ip_address  Ip-Address for IP communication
-     * @param {string}  sp_tty      TTY com_intf for serial communifcation
-     * @param {int}     com_intf   Communication-com_intf to be used (0: Serial, 1: IP)
+     * @param {int}     com_intf    Communication-com_intf to be used (0: Serial, 1: IP)
+     * @param {Object}  paramset    Context of paramters: ip_port, ip_address, sp_tty, sp_baud, sp_parity
      */
-    constructor(node, address, ip_port, ip_address, sp_tty, com_intf)
+    constructor(node, address, com_intf, paramset)
     {   
         var self = this;
 
+        const default_paramset = {
+            ip_port: "9750",
+            ip_address: "192.168.0.1", 
+            sp_tty: "/dev/ttyS0", 
+            sp_baud: "19200",
+            sp_parity: "8N1"
+        }
+        this.paramset = Object.assign({}, default_paramset, paramset);
+
         this.node = node;
         this.address = address;
-        this.ip_port = ip_port;
-        this.ip_address = ip_address;
-        this.sp_tty = sp_tty;     
         this.com_intf = com_intf;
 
         this.umbparser = new mod_umbparser.UMBParser(this.node);
@@ -134,10 +140,10 @@ class UMBHandler
         let datatimer = undefined;
         let num_retries = 0;
 
-        let serialport = new SerialPort(this.sp_tty, { 
-            baudRate: 19200,
+        let serialport = new SerialPort(this.paramset.sp_tty, { 
+            baudRate: parseInt(this.paramset.sp_baud),
             dataBits: 8,
-            parity: 'none',
+            parity: (this.paramset.sp_parity == "8N1") ? 'none' : 'even',
             stopBits: 1,
             flowControl: false
         });
@@ -182,7 +188,7 @@ class UMBHandler
                 });
 
                 serialport.on('error', (error) => {
-                    resolve("Data error on serial port");
+                    resolve("Data error on serial port (" + error + ")");
                 });
                 
                 if(!data_sent) {
@@ -298,7 +304,7 @@ class UMBHandler
                             clearTimeout(conTimeout);
                             resolve(result);
                         });
-                        l_client.connect(this.ip_port, this.ip_address);
+                        l_client.connect(this.paramset.ip_port, this.paramset.ip_address);
                     }).then((result) => {
                         l_emitter.removeAllListeners("connected");
                         if(result == "Connection timeout") {
@@ -390,7 +396,7 @@ class UMBHandler
                             clearTimeout(conTimeout);
                             resolve(result);
                         });
-                        l_client.connect(this.ip_port, this.ip_address);
+                        l_client.connect(this.paramset.ip_port, this.paramset.ip_address);
                     }).then((result) => {
                         l_emitter.removeAllListeners("connected");
                         if(result == "Connection timeout") {
