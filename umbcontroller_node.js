@@ -13,6 +13,7 @@ const { parse, resolve } = require('path');
 const { promises } = require('fs');
 const { memory } = require('console');
 const umb_consts = require('./umb_consts').umb_consts;
+const serialport = require('serialport')
 
 var node = undefined;
 var dev_address = 0;
@@ -81,6 +82,7 @@ module.exports = function(RED) {
         dev_address = parseInt(config.dev_address, 16);
         ip_address = config.ip_address;
         ip_port = config.ip_port;
+        sp_tty = config.sp_tty;
         node = this;
 
         this.cfg_channels = RED.nodes.getNode(config.channels);
@@ -93,8 +95,14 @@ module.exports = function(RED) {
             });
         }
         
+        
+        serialport.list().then(
+            ports => ports.forEach(console.log),
+            err => console.error(err)
+        )
+
         let umbgen = new mod_umbparser.UMBGenerator(this);
-        let umbhandler = new mod_umbhandler.UMBHandler(this, dev_address, ip_port, ip_address);
+        let umbhandler = new mod_umbhandler.UMBHandler(this, dev_address, ip_port, ip_address, sp_tty);
 
         node.on('input', function(msg) {
             let umbreq = umbgen.createMultiChReq(dev_address, this.query_channels);

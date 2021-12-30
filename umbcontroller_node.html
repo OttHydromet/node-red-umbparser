@@ -7,6 +7,7 @@
             dev_address: {value:"7001", required:true},
             ip_address: {value:"192.168.0.10", required:true},
             ip_port: {value:"9750", required:true},
+            sp_tty: {value:"/dev/tty.usbserial-FTX12G9L", required:false},
             channels: {value:"", type:"umbchannels"},
         },
         inputs:1,
@@ -15,10 +16,33 @@
         label: function() {
             return "UMB Controller";
         },
-    });
+        oneditprepare: function () {
+            var sp_list = $("#node-config-input-ps_tty");
+        }
+    },
+    );
 </script>
 
 <script type="text/html" data-template-name="umbcontroller" >
+    <style>
+        fieldset.groupbox {
+            margin: 8px;
+            margin-left: 0px;
+            margin-right: 0px;
+            border: 1px solid silver;
+            padding: 0px;
+            padding-left:8px;    
+            padding-right:8px;    
+            border-radius: 4px;
+        }
+        legend.groupbox-legend{
+            font-size: 14px;
+            text-decoration: none;
+            border: 0;
+            margin: 2px;
+            width: auto;
+        }    
+    </style>
     <body>
     <div class="form-row" >
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
@@ -27,17 +51,45 @@
     <div class="form-row">
         <label for="node-input-dev_address"><i class="icon-tag"></i>Device Address</label>
         <input type="text" id="node-input-dev_address" placeholder="Device address (hex)">
-    </div>
-    <div class="form-row">
-        <label for="node-input-ip_address"><i class="fa fa-globe"></i> Device IP</label>
-        <input type="text" id="node-input-ip_address" placeholder="ip.address" style="width:45%" dir="">
-        <span data-i18n="node-red:tcpin.label.port">Port</span>
-        <input type="text" id="node-input-ip_port" style="width:60px" dir="" placeholder="TCP Port">
-    </div>
-    <div class="form-row">
+     </div>
+    
+     <div class="form-row">
         <label for="node-input-channels"><i class="icon-tag"></i> Channels</label>
         <input type="text" id="node-input-channels">
     </div>
+
+     <span class="button-group">
+        <button type="button" class="red-ui-button toggle selected my-button-group">Serial</button>
+        <button type="button" class="red-ui-button toggle my-button-group">IP</button>
+    </span>
+     
+    <fieldset class="groupbox">
+        <legend class="groupbox-legend">
+            IP configuration
+        </legend>
+        <div class="panel-body">
+            <div class="form-row">
+                <label for="node-input-ip_address"><i class="fa fa-globe"></i> Device IP</label>
+                <input type="text" id="node-input-ip_address" placeholder="ip.address" style="width:45%" dir="">
+                <span data-i18n="node-red:tcpin.label.port">Port</span>
+                <input type="text" id="node-input-ip_port" style="width:60px" dir="" placeholder="TCP Port">
+            </div>
+        </div>
+    </fieldset>
+
+    <fieldset class="groupbox">
+        <legend class="groupbox-legend">
+            Serial configuration
+        </legend>
+        <div class="form-row">
+            <label for="node-input-sp_tty"><i class="icon-tag"></i>Serial Port</label>
+            <select class="form-select" id="node-config-input-ps_tty">
+                <option>/dev/tty.Bluetooth-Incoming-Port</option>
+                <option>/dev/tty.usbserial-FTX12G9L</option>
+            </select>
+        </div>
+    </fieldset>
+    
     </body>
 </script>
 
