@@ -7,7 +7,7 @@
             dev_address: {value:"7001", required:true},
             ip_address: {value:"192.168.0.10", required:true},
             ip_port: {value:"9750", required:true},
-            sp_tty: {value:"/dev/tty.usbserial-FTX12G9L", required:false},
+            sp_tty: {value:"", required:false},
             channels: {value:"", type:"umbchannels"},
         },
         inputs:1,
@@ -17,10 +17,25 @@
             return "UMB Controller";
         },
         oneditprepare: function () {
+            var node = this;
             var sp_list = $("#node-config-input-ps_tty");
-        }
-    },
-    );
+            $.getJSON('ttys', function(ttylist) {
+                console.log(ttylist);
+                $.each(ttylist, function(i, cur_tty) {
+                    sp_list.append($('<option>', {
+                        value: cur_tty,
+                        text: cur_tty,
+                    }));
+                });
+                console.log("selected tty:" + node.sp_tty);
+                sp_list.val(node.sp_tty).change();
+            });
+        },
+        oneditsave: function() {
+            var node = this;
+            node.sp_tty = $("#node-config-input-ps_tty").val();
+        },
+    });
 </script>
 
 <script type="text/html" data-template-name="umbcontroller" >
@@ -84,8 +99,6 @@
         <div class="form-row">
             <label for="node-input-sp_tty"><i class="icon-tag"></i>Serial Port</label>
             <select class="form-select" id="node-config-input-ps_tty">
-                <option>/dev/tty.Bluetooth-Incoming-Port</option>
-                <option>/dev/tty.usbserial-FTX12G9L</option>
             </select>
         </div>
     </fieldset>

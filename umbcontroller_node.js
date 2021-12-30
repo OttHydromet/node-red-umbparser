@@ -95,12 +95,6 @@ module.exports = function(RED) {
             });
         }
         
-        
-        serialport.list().then(
-            ports => ports.forEach(console.log),
-            err => console.error(err)
-        )
-
         let umbgen = new mod_umbparser.UMBGenerator(this);
         let umbhandler = new mod_umbhandler.UMBHandler(this, dev_address, ip_port, ip_address, sp_tty);
 
@@ -115,6 +109,26 @@ module.exports = function(RED) {
         });
     }
     RED.nodes.registerType("umbcontroller", UMBControllerNode);
+
+    // Register internal URL to list serial port configurations
+    RED.httpAdmin.get("/ttys", RED.auth.needsPermission('serialport.list'), function(req,res) {
+        
+        node.log("tty list: ");
+
+        serialport.list().then( (ports) => {
+            var tty_list = [];
+            ports.forEach(cur_tty => {
+                console.log(cur_tty);
+                tty_list.push(cur_tty.path);
+            });
+            res.json(tty_list);
+        }, (err) => {
+            console.error(err);
+                res.json("");
+
+        });
+        
+    });
 
     // Register internal URL to query channel list (used by channel_list config node)
     RED.httpAdmin.get("/umbchannels", RED.auth.needsPermission('umbchannels.read'), function(req,res) {
