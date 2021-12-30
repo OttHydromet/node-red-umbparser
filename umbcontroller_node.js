@@ -16,14 +16,8 @@ const umb_consts = require('./umb_consts').umb_consts;
 const serialport = require('serialport')
 
 var l_node = undefined;
-var l_dev_address = 0;
-var l_ip_address = 0
-var l_ip_port = 0;
-var l_com_intf;
-var l_sp_tty;
-var l_sp_baud;
-var l_sp_parity;
-var l_com_intf;
+var l_umbhandler;
+var l_cur_config;
 
 var umb_channels = {
     name: {value: "WS10"},
@@ -85,15 +79,8 @@ module.exports = function(RED) {
         RED.nodes.createNode(this, config);
 
         // BUG: NRU-15 - Communication only working with to-address 0
-        l_dev_address = parseInt(config.dev_address, 16);
-        l_ip_address = config.ip_address;
-        l_ip_port = config.ip_port;
-        l_com_intf = config.com_intf;
-        l_sp_tty = config.sp_tty;
-        l_sp_baud = config.sp_baud;
-        l_sp_parity = config.sp_parity;
-        l_com_intf = config.com_intf;
         l_node = this;
+        l_cur_config = config;
 
         this.cfg_channels = RED.nodes.getNode(config.channels);
         if(this.cfg_channels)
@@ -106,18 +93,18 @@ module.exports = function(RED) {
         }
         
         let umbgen = new mod_umbparser.UMBGenerator(this);
-        let umbhandler = new mod_umbhandler.UMBHandler(l_node, l_dev_address, l_com_intf, { 
-            ip_address: l_ip_address, 
-            ip_port:    l_ip_port,
-            sp_tty:     l_sp_tty,
-            sp_baud:    l_sp_baud,
-            sp_parity:  l_sp_parity,
+        l_umbhandler = new mod_umbhandler.UMBHandler(l_node, config.dev_address, config.com_intf, { 
+            ip_address: config.ip_address, 
+            ip_port:    config.ip_port,
+            sp_tty:     config.sp_tty,
+            sp_baud:    config.sp_baud,
+            sp_parity:  config.sp_parity,
         });
 
         l_node.on('input', function(msg) {
-            let umbreq = umbgen.createMultiChReq(l_dev_address, this.query_channels);
+            let umbreq = umbgen.createMultiChReq(config.dev_address, this.query_channels);
             
-            umbhandler.syncTransfer(umbreq).then((response) => {
+            l_umbhandler.syncTransfer(umbreq).then((response) => {
                 let retmsg = new Object;
                 retmsg.payload = response;
                 l_node.send(retmsg);
@@ -149,20 +136,13 @@ module.exports = function(RED) {
     // Register internal URL to query channel list (used by channel_list config node)
     RED.httpAdmin.get("/umbchannels", RED.auth.needsPermission('umbchannels.read'), function(req,res) {
         let umbgen = new mod_umbparser.UMBGenerator(l_node);
-        let umbhandler = new mod_umbhandler.UMBHandler(l_node, l_dev_address, l_com_intf, { 
-            ip_address: l_ip_address, 
-            ip_port:    l_ip_port,
-            sp_tty:     l_sp_tty,
-            sp_baud:    l_sp_baud,
-            sp_parity:  l_sp_parity,
-        });
-
+        
         let cfg_unitsystem = new URLSearchParams(req.url).get("unitsystem");
 
         /* 1. query number of blocks and channels */
         new Promise((resolve, reject) => {
-            let umbreq = umbgen.createChNumReq(l_dev_address);
-            umbhandler.syncTransfer(umbreq).then((response) => {
+            let umbreq = umbgen.createChNumReq(l_cur_config.dev_address);
+            l_umbhandler.syncTransfer(umbreq).then((response) => {
                 if(response.umbframe == undefined)
                 {
                     l_node.log("Error: " + response);
@@ -179,8 +159,8 @@ module.exports = function(RED) {
         /* 2. Query channel list */
         .then((parm) => {
             return new Promise((resolve, reject) => {
-                let umbreq = umbgen.createChListReq(l_dev_address, 0);
-                umbhandler.syncTransfer(umbreq).then((response) => {
+                let umbreq = umbgen.createChListReq(l_cur_config.dev_address, 0);
+                l_umbhandler.syncTransfer(umbreq).then((response) => {
                     if(response.umbframe == undefined)
                     {
                         l_node.log("Error: " + response);
@@ -204,8 +184,8 @@ module.exports = function(RED) {
                 (async () => {
                     await channelList.reduce(async (memo, curChannel) => {
                         await memo;
-                        let umbreq = umbgen.createChDetailsReq(l_dev_address, curChannel);
-                        await umbhandler.syncTransfer(umbreq).then((response) => {
+                        let umbreq = umbgen.createChDetailsReq(l_cur_config.dev_address, curChannel);
+                        await l_umbhandler.syncTransfer(umbreq).then((response) => {
                             if(response.umbframe == undefined)
                             {
                                 l_node.log("Error: " + response);
