@@ -9,6 +9,8 @@
             ip_address: {value:"192.168.0.10", required:true},
             ip_port: {value:"9750", required:true},
             sp_tty: {value:"", required:false},
+            sp_baud: {value: "19200", required:true},
+            sp_parity: {value: "8E1", required:true},
             channels: {value:"", type:"umbchannels"},
         },
         inputs:1,
@@ -19,17 +21,40 @@
         },
         oneditprepare: function () {
             var node = this;
-            var sp_list = $("#node-config-input-ps_tty");
+            var tty_list = Array();
             $.getJSON('ttys', function(ttylist) {
                 console.log(ttylist);
                 $.each(ttylist, function(i, cur_tty) {
-                    sp_list.append($('<option>', {
+                    console.log(i);
+                    tty_list.push({
                         value: cur_tty,
-                        text: cur_tty,
-                    }));
+                        label: cur_tty,
+                    });
                 });
-                console.log("selected tty:" + node.sp_tty);
-                sp_list.val(node.sp_tty).change();
+                
+                $("#node-input-sp_tty").typedInput({
+                types: [
+                    {
+                        value: "sp_tty",
+                        options: tty_list,
+                    }
+                    ]
+                });
+            });
+
+            $("#node-input-name").typedInput({
+                type:"str",
+                types:["str"],
+            });
+
+            $("#node-input-dev_address").typedInput({
+                type:"num",
+                types:["num"],
+            });
+
+            $("#node-input-ip_port").typedInput({
+                type:"num",
+                types:["num"],
             });
 
             $("#node-input-com_intf").typedInput({
@@ -42,11 +67,30 @@
                         ]
                     }
                 ]
-            })
+            });
+
+            $("#node-input-sp_parity").typedInput({
+                types: [
+                    {
+                        value: "sp_parity",
+                        options: [
+                            { value: "8N1", label: "8N1"},
+                            { value: "8E1", label: "8E1"},
+                        ]
+                    }
+                ]
+            });
+
+            $("#node-input-sp_baud").typedInput({
+                type:"num",
+                types:["num"],
+            });
+            
+            
         },
         oneditsave: function() {
             var node = this;
-            node.sp_tty = $("#node-config-input-ps_tty").val();
+            node.sp_tty = $("#node-input-ps_tty").val();
         },
     });
 </script>
@@ -87,7 +131,7 @@
     </div>
 
     <div class="form-row">
-        <label for="node-input-com_intf"><i class="icon-tag"></i> com_intf</label>
+        <label for="node-input-com_intf"><i class="icon-tag"></i> Interface</label>
         <input id="node-input-com_intf" type="text">
     </div>
      
@@ -99,8 +143,10 @@
             <div class="form-row">
                 <label for="node-input-ip_address"><i class="fa fa-globe"></i> Device IP</label>
                 <input type="text" id="node-input-ip_address" placeholder="ip.address" style="width:45%" dir="">
-                <span data-i18n="node-red:tcpin.label.port">Port</span>
-                <input type="text" id="node-input-ip_port" style="width:60px" dir="" placeholder="TCP Port">
+            </div>
+            <div class="form-row">
+                <label for="node-input-ip_port">Port</label>
+                <input type="text" id="node-input-ip_port" style="width:200px" dir="" placeholder="TCP Port">
             </div>
         </div>
     </fieldset>
@@ -110,9 +156,16 @@
             Serial configuration
         </legend>
         <div class="form-row">
-            <label for="node-input-sp_tty"><i class="icon-tag"></i>Serial Port</label>
-            <select class="form-select" id="node-config-input-ps_tty">
-            </select>
+            <label for="node-input-sp_tty"><i class="icon-tag"></i> Serial Port</label>
+            <input id="node-input-sp_tty" type="text">
+        </div>
+        <div class="form-row">
+            <label for="node-input-sp_baud"><i class="icon-tag"></i>Baudrate</label>
+            <input type="text" id="node-input-sp_baud" style="width:200px">
+        </div>
+        <div class="form-row">
+            <label for="node-input-sp_parity"><i class="icon-tag"></i>Parity</label>
+            <input type="text" id="node-input-sp_parity" style="width:200px">
         </div>
     </fieldset>
     

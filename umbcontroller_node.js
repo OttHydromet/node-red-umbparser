@@ -21,6 +21,8 @@ var l_ip_address = 0
 var l_ip_port = 0;
 var l_com_intf;
 var l_sp_tty;
+var l_sp_baudrate;
+var l_sp_parity;
 var l_com_intf;
 
 var umb_channels = {
@@ -88,6 +90,8 @@ module.exports = function(RED) {
         l_ip_port = config.ip_port;
         l_com_intf = config.com_intf;
         l_sp_tty = config.sp_tty;
+        l_sp_baudate = config.sp_baudrate;
+        l_sp_parity = config.sp_parity;
         l_com_intf = config.com_intf;
         l_node = this;
 
