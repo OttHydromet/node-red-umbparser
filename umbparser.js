@@ -38,7 +38,7 @@ const PAR_STATE =
 {
     PARSER_IDLE : 'idle',
     PARSER_PROCESSING : 'processing',
-    PARSER_ERROR : 'error',
+    PARSER_ERROR : 'parsing error',
     PARSER_CRCERROR : 'crc_error',
     PARSER_FINISHED : 'finished',
 }
@@ -534,7 +534,6 @@ class UMBParser
         let measValues = new Object();
         chData.forEach(element => {
             let curMeasName = this.channelmap.get(element.ch_number);
-            this.node.log(curMeasName);
             if (curMeasName in measValues)
             {
                 this.node.error("Multiple measurements of " + curMeasName + " selected! Please make sure to query only one.");
@@ -844,3 +843,4 @@ class UMBGenerator
 module.exports.UMBParser = UMBParser;
 module.exports.UMBGenerator = UMBGenerator;
 module.exports.MeasChVal = MeasChVal;
+module.exports.PAR_STATE = PAR_STATE;
