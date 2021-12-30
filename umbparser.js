@@ -222,6 +222,30 @@ class MeasChVal
         }
         return meas_name;
     }
+
+    static parseDataValue(dtype, dvalue)
+    {
+        var retval;
+        switch(dtype)
+        {
+            case "UCHAR":
+            case "SCHAR":
+                retval = dvalue.toString();
+                break;
+            case "USHORT":
+            case "SSHORT":
+            case "ULONG":
+            case "SLONG":
+                retval = dvalue.toFixed();
+                break;
+            case "FLOAT":
+            case "DOUBLE":
+            default:
+                retval = dvalue.toPrecision(3);
+                break;
+        }
+        return retval;
+    }
 }
 
 /**
@@ -538,7 +562,7 @@ class UMBParser
             {
                 this.node.error("Multiple measurements of " + curMeasName + " selected! Please make sure to query only one.");
             }
-            measValues[curMeasName] = element.ch_value.toPrecision(3);
+            measValues[curMeasName] = MeasChVal.parseDataValue(element.ch_data_type, element.ch_value);
         });
 
         let parsedData = new UMBFrameData("Multi channel data", chData, measValues);
