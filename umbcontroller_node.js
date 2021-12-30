@@ -93,7 +93,7 @@ module.exports = function(RED) {
         }
         
         let umbgen = new mod_umbparser.UMBGenerator(this);
-        l_umbhandler = new mod_umbhandler.UMBHandler(l_node, config.dev_address, config.com_intf, { 
+        l_umbhandler = new mod_umbhandler.UMBHandler(l_node, parseInt(config.dev_address, 16), config.com_intf, { 
             ip_address: config.ip_address, 
             ip_port:    config.ip_port,
             sp_tty:     config.sp_tty,
@@ -102,7 +102,7 @@ module.exports = function(RED) {
         });
 
         l_node.on('input', function(msg) {
-            let umbreq = umbgen.createMultiChReq(config.dev_address, this.query_channels);
+            let umbreq = umbgen.createMultiChReq(parseInt(config.dev_address, 16), this.query_channels);
             
             l_umbhandler.syncTransfer(umbreq).then((response) => {
                 let retmsg = new Object;
@@ -141,7 +141,7 @@ module.exports = function(RED) {
 
         /* 1. query number of blocks and channels */
         new Promise((resolve, reject) => {
-            let umbreq = umbgen.createChNumReq(l_cur_config.dev_address);
+            let umbreq = umbgen.createChNumReq(parseInt(l_cur_config.dev_address, 16));
             l_umbhandler.syncTransfer(umbreq).then((response) => {
                 if(response.umbframe == undefined)
                 {
@@ -159,7 +159,7 @@ module.exports = function(RED) {
         /* 2. Query channel list */
         .then((parm) => {
             return new Promise((resolve, reject) => {
-                let umbreq = umbgen.createChListReq(l_cur_config.dev_address, 0);
+                let umbreq = umbgen.createChListReq(parseInt(l_cur_config.dev_address, 16), 0);
                 l_umbhandler.syncTransfer(umbreq).then((response) => {
                     if(response.umbframe == undefined)
                     {
@@ -184,7 +184,7 @@ module.exports = function(RED) {
                 (async () => {
                     await channelList.reduce(async (memo, curChannel) => {
                         await memo;
-                        let umbreq = umbgen.createChDetailsReq(l_cur_config.dev_address, curChannel);
+                        let umbreq = umbgen.createChDetailsReq(parseInt(l_cur_config.dev_address, 16), curChannel);
                         await l_umbhandler.syncTransfer(umbreq).then((response) => {
                             if(response.umbframe == undefined)
                             {
