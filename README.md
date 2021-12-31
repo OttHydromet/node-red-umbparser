@@ -140,11 +140,15 @@ msg.payload.umbframe.framedata.parsed: {
 The basic configuration of the node includes:
 
 * **Name**
+  Name of the device.
 
 * **Device Address**
-
+  Device address.
+  
+  >**_NOTE:_** Please note that the address must be entered in hex format
+  
 * **Channels**
-  This channel configuration is a separate configuration, that defines a set of measurement channels to be queried.
+  The channel configuration is a separate configuration, that defines a set of measurement channels to be queried. Please refer to the [channel configuration](#channel_configuration) for details.
 
 * **Interface**
   The node supports UMB communication via IP and Serial interfaces. There a two separate sections for the individual configuration parameters
@@ -156,7 +160,7 @@ The basic configuration of the node includes:
     IP of the UMB device to be queried
 
   * **Port**
-    TCP Port of the device (Default: 9750)
+    TCP Port of the device _(Default: 9750)_
 
 * **Serial configuration**
 
@@ -164,15 +168,15 @@ The basic configuration of the node includes:
     A list of available serial interfaces (ttys) will be provided. Please select the interface, that interferes to the RS485/UMB interface
 
   * **Baudrate**
-    Baudrate to be used (Default: 19200)
+    Baudrate to be used _(Default: 19200)_
 
   * **Partity**
-    Parity to be used. Currently only two settings are allowed: 8N1 and 8E1 (Default: 8N1)
-
-    
+    Parity to be used. Currently only two settings are allowed: 8N1 and 8E1 _(Default: 8N1)_
 
 
-## Channel configuration
+
+
+## <a name="channel_configuration">Channel configuration</a>
 
 ![](doc/doc_channel_config.jpg)
 
