@@ -236,12 +236,12 @@ class MeasChVal
             case "SSHORT":
             case "ULONG":
             case "SLONG":
-                retval = dvalue.toFixed();
+                retval = parseInt(dvalue.toFixed());
                 break;
             case "FLOAT":
             case "DOUBLE":
             default:
-                retval = dvalue.toPrecision(3);
+                retval = parseFloat(dvalue.toPrecision(3));
                 break;
         }
         return retval;
