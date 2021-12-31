@@ -17,6 +17,9 @@ const Readline = require('@serialport/parser-readline')
 
 let l_socket_id = 0;
 
+/**
+ * UMB Handler class that is responsible to coordinate communication to UMB devices
+ */
 class UMBHandler
 {
     
@@ -50,6 +53,11 @@ class UMBHandler
         this.node.status({fill:"red", shape:"ring", text:"disconnected"});
     }
     
+    /**
+     * This function will execute a UMB transfer depending on the configured 
+     * 
+     * @param  {Array} umbreq   Raw UMB frame data for the request to be queried
+     */
     async syncTransfer(umbreq) {
         if(this.com_intf == 1) {
             return this.syncTransfer_NET(umbreq);
@@ -58,6 +66,11 @@ class UMBHandler
         }
     }
 
+    /**
+     * This internal function will execute a UMB transfer over serial comminucation channel
+     * 
+     * @param  {Array} umbreq   Raw UMB frame data for the request to be queried
+     */
     async syncTransfer_SERIAL(umbreq) {
         let fnct_retval = undefined;        
         let data_sent = false;
@@ -157,6 +170,11 @@ class UMBHandler
         return fnct_retval;
     }
 
+    /**
+     * This internal function will execute a UMB transfer over network communication
+     * 
+     * @param  {Array} umbreq   Raw UMB frame data for the request to be queried
+     */
     async syncTransfer_NET(umbreq)
     {
         let fnct_retval = undefined;
