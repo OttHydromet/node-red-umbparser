@@ -1,4 +1,4 @@
-# UMB controller node 
+# UMB controller node
 
 This node can be used to query measurement data from Sensors that support the UMB binary protocol.
 
@@ -6,10 +6,10 @@ The purpose of this node is to periodically poll and parse measurement data from
 
 ## UMB protocol details
 
-UMB stands for Universal Measurement Bus. It basically is a RS485 based hardware 
-interface and protocol, that is used by most meteorological sensors from the 
-company by Lufft / OTT Hydromet. 
-The UMB protocol that is used on these sensors is an open standard. There are 
+UMB stands for Universal Measurement Bus. It basically is a RS485 based hardware
+interface and protocol, that is used by most meteorological sensors from the
+company by Lufft / OTT Hydromet.
+The UMB protocol that is used on these sensors is an open standard. There are
 different variants available for ASCII and binary ouput.
 This node implements the **UMB binary** protocol.
 
@@ -35,11 +35,11 @@ The Controller always has the address **0xF001**.
 
 ## Input
 
-The input needs ot have no data. It is just used as a trigger to query the configured measurement data. 
+The input needs ot have no data. It is just used as a trigger to query the configured measurement data.
 
 ## Output
 
-If the node detects an error, the payload will just contain the according error message. 
+If the node detects an error, the payload will just contain the according error message.
 
 The output of a properly processed payload consists of mainly two objects:
 
@@ -70,7 +70,7 @@ The output of a properly processed payload consists of mainly two objects:
       	"ch_value":4.459139347076416
     	}],
     	"parsed":{
-      	"Temperature":"4.46"
+      	"Temperature":4.46
     	}
   	}
 	}
@@ -122,12 +122,12 @@ Besides the name, this object contains the **raw** data and the **parsed** data 
 
 The **raw** object contains an array of the measurement channels that have been queried.
 
-The **parsed** object contains the parsed data. 
+The **parsed** object contains the parsed data.
 
 ```json
 msg.payload.umbframe.framedata.parsed: {
-	"Temperature":"4.46",
-	"Humidity":"78.2" 
+	"Temperature":4.46,
+	"Humidity":78.2
 }
 ```
 
@@ -139,29 +139,56 @@ msg.payload.umbframe.framedata.parsed: {
 
 The basic configuration of the node includes:
 
-* Name
-* Device Address
-* Device IP
+* **Name**
+
+* **Device Address**
+
 * **Channels**
   This channel configuration is a separate configuration, that defines a set of measurement channels to be queried.
+
+* **Interface**
+  The node supports UMB communication via IP and Serial interfaces. There a two separate sections for the individual configuration parameters
+
+* **IP configuration**
+
+  * **Device IP**
+
+    IP of the UMB device to be queried
+
+  * **Port**
+    TCP Port of the device (Default: 9750)
+
+* **Serial configuration**
+
+  * **Serial Port**
+    A list of available serial interfaces (ttys) will be provided. Please select the interface, that interferes to the RS485/UMB interface
+
+  * **Baudrate**
+    Baudrate to be used (Default: 19200)
+
+  * **Partity**
+    Parity to be used. Currently only two settings are allowed: 8N1 and 8E1 (Default: 8N1)
+
+    
+
 
 ## Channel configuration
 
 ![](doc/doc_channel_config.jpg)
 
-Each channel definition consists of 3 values: 
+Each channel definition consists of 3 values:
 
 * a **channel ID** - indicated with a # at the begining
 * a **channel name** - is automatically queried or can be modified manually
 * A **Unit** - defines the unit of the acoording meausrement
 
-The check box at the left of each measurement activates or deactivates the channel. 
+The check box at the left of each measurement activates or deactivates the channel.
 
 A measurement channel can be deleted from the configuration using the cross at the right side of the measurement entry.
 
 #### Add channel manually
 
-Below the channel list is a **+** button that allows you to add channels as you need. 
+Below the channel list is a **+** button that allows you to add channels as you need.
 
 #### Query device channels
 
@@ -188,11 +215,6 @@ No bugs are known yet.
 
 # Planned features
 
-### Serial interface support
-
-Currently the node only support IP socket queries via TCP. Depending of the device, node-red is running a direct serial interface might be more useful, especially as there are only a few device from OTT Hydromet that feature ethernet or WiFi interfaces.
-
 ### Implement status request feature to ping a device
 
 Every UMB device features a status command, that can be used to ping a device. This is helpful to verify that the basic configuration and setup is working properly.
-
