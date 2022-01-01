@@ -11,10 +11,14 @@ changelog:
       labels:
         - Semver-Major
         - breaking-change
-    - title: Exciting New Features 🎉
+    - title: New Features 🎉
       labels:
         - Semver-Minor
         - enhancement
+    - title: Bugfixes 🚫
+      labels:
+        - Semver-Minor
+        - bug
     - title: Other Changes
       labels:
         - "*"
