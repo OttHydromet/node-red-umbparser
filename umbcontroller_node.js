@@ -13,11 +13,11 @@ const { parse, resolve } = require('path');
 const { promises } = require('fs');
 const { memory } = require('console');
 const umb_consts = require('./umb_consts').umb_consts;
+const serialport = require('serialport')
 
-var node = undefined;
-var dev_address = 0;
-var ip_address = 0
-var ip_port = 0;
+var l_node = undefined;
+var l_umbhandler;
+var l_cur_config;
 
 var umb_channels = {
     name: {value: "WS10"},
@@ -74,14 +74,13 @@ function checkUnit(cur_unit, cfg_unitsystem) {
 }
 
 module.exports = function(RED) {
+
     function UMBControllerNode(config) {
         RED.nodes.createNode(this, config);
 
         // BUG: NRU-15 - Communication only working with to-address 0
-        dev_address = parseInt(config.dev_address, 16);
-        ip_address = config.ip_address;
-        ip_port = config.ip_port;
-        node = this;
+        l_node = this;
+        l_cur_config = config;
 
         this.cfg_channels = RED.nodes.getNode(config.channels);
         if(this.cfg_channels)
@@ -94,40 +93,65 @@ module.exports = function(RED) {
         }
         
         let umbgen = new mod_umbparser.UMBGenerator(this);
-        let umbhandler = new mod_umbhandler.UMBHandler(this, dev_address, ip_port, ip_address);
+        l_umbhandler = new mod_umbhandler.UMBHandler(l_node, parseInt(config.dev_address, 16), config.com_intf, { 
+            ip_address: config.ip_address, 
+            ip_port:    config.ip_port,
+            sp_tty:     config.sp_tty,
+            sp_baud:    config.sp_baud,
+            sp_parity:  config.sp_parity,
+        });
 
-        node.on('input', function(msg) {
-            let umbreq = umbgen.createMultiChReq(dev_address, this.query_channels);
+        l_node.on('input', function(msg) {
+            let umbreq = umbgen.createMultiChReq(parseInt(config.dev_address, 16), this.query_channels);
             
-            umbhandler.syncTransfer(umbreq).then((response) => {
+            l_umbhandler.syncTransfer(umbreq).then((response) => {
                 let retmsg = new Object;
                 retmsg.payload = response;
-                node.send(retmsg);
+                l_node.send(retmsg);
             });
         });
     }
     RED.nodes.registerType("umbcontroller", UMBControllerNode);
 
+    // Register internal URL to list serial port configurations
+    RED.httpAdmin.get("/ttys", RED.auth.needsPermission('serialport.list'), function(req,res) {
+        
+        l_node.log("tty list: ");
+
+        serialport.list().then( (ports) => {
+            var tty_list = [];
+            ports.forEach(cur_tty => {
+                console.log(cur_tty);
+                tty_list.push(cur_tty.path);
+            });
+            res.json(tty_list);
+        }, (err) => {
+            console.error(err);
+                res.json("");
+
+        });
+        
+    });
+
     // Register internal URL to query channel list (used by channel_list config node)
     RED.httpAdmin.get("/umbchannels", RED.auth.needsPermission('umbchannels.read'), function(req,res) {
-        let umbgen = new mod_umbparser.UMBGenerator(node);
-        let umbhandler = new mod_umbhandler.UMBHandler(node, dev_address, ip_port, ip_address);
-
+        let umbgen = new mod_umbparser.UMBGenerator(l_node);
+        
         let cfg_unitsystem = new URLSearchParams(req.url).get("unitsystem");
 
         /* 1. query number of blocks and channels */
         new Promise((resolve, reject) => {
-            let umbreq = umbgen.createChNumReq(dev_address);
-            umbhandler.syncTransfer(umbreq).then((response) => {
+            let umbreq = umbgen.createChNumReq(parseInt(l_cur_config.dev_address, 16));
+            l_umbhandler.syncTransfer(umbreq).then((response) => {
                 if(response.umbframe == undefined)
                 {
-                    node.log("Error: " + response);
+                    l_node.log("Error: " + response);
                     reject("Error: " + response);
                 }
                 else
                 {
                     numChannels = response.umbframe.framedata.parsed.numChannels;
-                    node.log("channels detected: " + numChannels);
+                    l_node.log("channels detected: " + numChannels);
                     resolve(numChannels);
                 }
             });
@@ -135,16 +159,16 @@ module.exports = function(RED) {
         /* 2. Query channel list */
         .then((parm) => {
             return new Promise((resolve, reject) => {
-                let umbreq = umbgen.createChListReq(dev_address, 0);
-                umbhandler.syncTransfer(umbreq).then((response) => {
+                let umbreq = umbgen.createChListReq(parseInt(l_cur_config.dev_address, 16), 0);
+                l_umbhandler.syncTransfer(umbreq).then((response) => {
                     if(response.umbframe == undefined)
                     {
-                        node.log("Error: " + response);
+                        l_node.log("Error: " + response);
                         reject("Error: " + response);
                     }
                     else
                     {
-                        node.log("Channellist read");
+                        l_node.log("Channellist read");
                         channelList = response.umbframe.framedata.parsed.channels;
                         resolve(channelList);
                     }
@@ -160,17 +184,17 @@ module.exports = function(RED) {
                 (async () => {
                     await channelList.reduce(async (memo, curChannel) => {
                         await memo;
-                        let umbreq = umbgen.createChDetailsReq(dev_address, curChannel);
-                        await umbhandler.syncTransfer(umbreq).then((response) => {
+                        let umbreq = umbgen.createChDetailsReq(parseInt(l_cur_config.dev_address, 16), curChannel);
+                        await l_umbhandler.syncTransfer(umbreq).then((response) => {
                             if(response.umbframe == undefined)
                             {
-                                node.log("Error: " + response);
+                                l_node.log("Error: " + response);
                                 reject("Error: " + response);
                                 return response;
                             }
                             else
                             {
-                                node.log("CurChannel: " + curChannel);
+                                l_node.log("CurChannel: " + curChannel);
                                 curChDetails = new Object();
                                 curChDetails.enabled = false;
                                 curChDetails.ch = curChannel;
@@ -180,7 +204,7 @@ module.exports = function(RED) {
                                     channelCfg.push(curChDetails);
                                 }
                                 else {
-                                    node.log("skipped");
+                                    l_node.log("skipped");
                                 }
                             }
                         });
@@ -195,7 +219,7 @@ module.exports = function(RED) {
             res.json(umb_channels);
         })
         .catch((error) => {
-            node.log("Error: = " + error);
+            l_node.log("Error: = " + error);
             umb_channels.error = error;
             res.json(umb_channels);
         });
