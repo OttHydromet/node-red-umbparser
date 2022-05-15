@@ -272,7 +272,50 @@ class UMBBase
     calcCRC(byte_array) 
     {
         return this._CRC.compute(byte_array);
-    } 
+    }
+    
+    /**
+     * Internal method to retrive the payload index according to the given frame type
+     * @param {FRAME_TYPE} frame_type Response or Request
+     */
+    static getPayloadDataIndex(frame_type)
+    {
+        let uDataIdx = (umb_consts.UMBFRAME_IDX.CMDV + 1);
+    
+        switch (frame_type)
+        {
+        case FRAME_TYPE.RESPONSE:
+            //@TODO
+            //if (UmbDispatcher_HasSubCmd(UMBFrame_getCmd(pFrame), UMBFrame_getCmdVer(pFrame)))
+            if(0)
+            {
+                uDataIdx = (umb_consts.UMBFRAME_IDX.SUBCMD + 1);
+            }
+            else
+            {
+                uDataIdx = (umb_consts.UMBFRAME_IDX.RES_STATUS + 1);
+            }
+            break;
+    
+        case FRAME_TYPE.REQUEST:
+            //@TODO
+            //if (UmbDispatcher_HasSubCmd(UMBFrame_getCmd(pFrame), UMBFrame_getCmdVer(pFrame)))
+            if(0)
+            {
+                uDataIdx = (umb_consts.UMBFRAME_IDX.SUBCMD + 1);
+            }
+            else
+            {
+                uDataIdx = (umb_consts.UMBFRAME_IDX.CMDV + 1);
+            }
+            break;    
+        default:
+            uDataIdx = (umb_consts.UMBFRAME_IDX.CMDV + 1);
+            break;
+        }
+    
+        return uDataIdx;
+    }
 }
 
 /**
@@ -766,48 +809,7 @@ class UMBGenerator extends UMBBase
         this.#frameBuffer[newFrameLength - 1] = umb_consts.UMBFRAME_VAL.EOT;
     }
 
-    /**
-     * Internal method to retrive the payload index according to the given frame type
-     * @param {FRAME_TYPE} frame_type Response or Request
-     */
-    #getPayloadDataIndex(frame_type)
-    {
-        let uDataIdx = (umb_consts.UMBFRAME_IDX.CMDV + 1);
-    
-        switch (frame_type)
-        {
-        case FRAME_TYPE.RESPONSE:
-            //@TODO
-            //if (UmbDispatcher_HasSubCmd(UMBFrame_getCmd(pFrame), UMBFrame_getCmdVer(pFrame)))
-            if(0)
-            {
-                uDataIdx = (umb_consts.UMBFRAME_IDX.SUBCMD + 1);
-            }
-            else
-            {
-                uDataIdx = (umb_consts.UMBFRAME_IDX.RES_STATUS + 1);
-            }
-            break;
-    
-        case FRAME_TYPE.REQUEST:
-            //@TODO
-            //if (UmbDispatcher_HasSubCmd(UMBFrame_getCmd(pFrame), UMBFrame_getCmdVer(pFrame)))
-            if(0)
-            {
-                uDataIdx = (umb_consts.UMBFRAME_IDX.SUBCMD + 1);
-            }
-            else
-            {
-                uDataIdx = (umb_consts.UMBFRAME_IDX.CMDV + 1);
-            }
-            break;    
-        default:
-            uDataIdx = (umb_consts.UMBFRAME_IDX.CMDV + 1);
-            break;
-        }
-    
-        return uDataIdx;
-    }
+
     
     /**
      * This method generates a mutlichannel UMB request
@@ -818,7 +820,7 @@ class UMBGenerator extends UMBBase
     createMultiChReq(to_addr, channellist) 
     {
         this.#createReq(umb_consts.UMB_CMD.GETMULTICHANNEL, 0x10, to_addr, umb_consts.UMBFRAME_CONTROLLER_ADDR);
-        let payloadIndex = this.#getPayloadDataIndex(FRAME_TYPE.REQUEST);
+        let payloadIndex = UMBBase.getPayloadDataIndex(FRAME_TYPE.REQUEST);
         let payloadLength = 1+channellist.length*2;
 
         let chbuf = new Uint8Array(payloadLength);
@@ -853,7 +855,7 @@ class UMBGenerator extends UMBBase
     createDevInfoReq(to_addr, subcmd, option=undefined) 
     {
         this.#createReq(umb_consts.UMB_CMD.GETDEVINFO, 0x10, to_addr, umb_consts.UMBFRAME_CONTROLLER_ADDR);
-        let payloadIndex = this.#getPayloadDataIndex(FRAME_TYPE.REQUEST);
+        let payloadIndex = UMBBase.getPayloadDataIndex(FRAME_TYPE.REQUEST);
         let payloadLength = 0;
 
         this.#frameBuffer[payloadIndex++] = subcmd;

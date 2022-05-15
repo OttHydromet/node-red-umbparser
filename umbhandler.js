@@ -22,7 +22,10 @@ let l_socket_id = 0;
  */
 class UMBHandler
 {
-    
+    #node;
+    #address;
+    #com_intf;
+    #umbparser
 
     /**
      * 
@@ -44,13 +47,13 @@ class UMBHandler
         }
         this.paramset = Object.assign({}, default_paramset, paramset);
 
-        this.node = node;
-        this.address = address;
-        this.com_intf = com_intf;
+        this.#node = node;
+        this.#address = address;
+        this.#com_intf = com_intf;
 
-        this.umbparser = new mod_umbparser.UMBParser(this.node);
+        this.#umbparser = new mod_umbparser.UMBParser(this.#node);
 
-        this.node.status({fill:"red", shape:"ring", text:"disconnected"});
+        this.#node.status({fill:"red", shape:"ring", text:"disconnected"});
     }
     
     /**
@@ -59,10 +62,10 @@ class UMBHandler
      * @param  {Array} umbreq   Raw UMB frame data for the request to be queried
      */
     async syncTransfer(umbreq) {
-        if(this.com_intf == 1) {
-            return this.syncTransfer_NET(umbreq);
+        if(this.#com_intf == 1) {
+            return this.#syncTransfer_NET(umbreq);
         } else {
-            return this.syncTransfer_SERIAL(umbreq);
+            return this.#syncTransfer_SERIAL(umbreq);
         }
     }
 
@@ -71,7 +74,7 @@ class UMBHandler
      * 
      * @param  {Array} umbreq   Raw UMB frame data for the request to be queried
      */
-    async syncTransfer_SERIAL(umbreq) {
+    async #syncTransfer_SERIAL(umbreq) {
         let fnct_retval = undefined;        
         let data_sent = false;
         let datatimer = undefined;
@@ -87,33 +90,33 @@ class UMBHandler
 
         while(fnct_retval == undefined) {
 
-            this.node.log("TX start (length:" + umbreq.length + ")");
+            this.#node.log("TX start (length:" + umbreq.length + ")");
             
-            this.node.status({fill:"green",shape:"ring",text:"connected"});
+            this.#node.status({fill:"green",shape:"ring",text:"connected"});
 
             await new Promise( (resolve, reject) => {             
                 serialport.on('data', (chunk) => {
                     let parsedFrame;
                     
-                    this.node.log("tty RX: " + chunk.length + "bytes");
-                    this.node.trace(chunk.toString('hex'));
+                    this.#node.log("tty RX: " + chunk.length + "bytes");
+                    this.#node.trace(chunk.toString('hex'));
                     
                     // @Note: Some USB to serial adapters seem to receive 1 byte frames, although no device is connected
-                    parsedFrame = this.umbparser.ParseReadBuf(chunk);                    
+                    parsedFrame = this.#umbparser.ParseReadBuf(chunk);                    
                 
-                    this.node.log("Parser status: " + parsedFrame.parserState);
+                    this.#node.log("Parser status: " + parsedFrame.parserState);
 
                     switch(parsedFrame.parserState) {
                         case mod_umbparser.PAR_STATE.PARSER_FINISHED:
-                            this.node.log("Frametype: " + parsedFrame.umbframe.type);
-                            this.node.log("Framestatus: " + parsedFrame.umbframe.status);
-                            this.node.log("Framecmd: " + parsedFrame.umbframe.cmd);
+                            this.#node.log("Frametype: " + parsedFrame.umbframe.type);
+                            this.#node.log("Framestatus: " + parsedFrame.umbframe.status);
+                            this.#node.log("Framecmd: " + parsedFrame.umbframe.cmd);
                             resolve(parsedFrame);
                             break;
                         case mod_umbparser.PAR_STATE.PARSER_IDLE:
                         case mod_umbparser.PAR_STATE.PARSER_PROCESSING:
                             // still processing wait for complete frame to be parsed
-                            this.node.log("processing...");
+                            this.#node.log("processing...");
                             break;
                         case mod_umbparser.PAR_STATE.PARSER_ERROR:
                             resolve("Parsing error");
@@ -129,13 +132,13 @@ class UMBHandler
                 });
                 
                 if(!data_sent) {
-                    this.umbparser.resetParser();
+                    this.#umbparser.resetParser();
                     // send request
                     serialport.write(umbreq);         
                     data_sent = true;
 
                     datatimer = setTimeout(() => {
-                        this.node.log("Data timeout");
+                        this.#node.log("Data timeout");
                         resolve("Data timeout");
                     }, umb_consts.UMB_TIMEOUT.TIMEOUT_LONG*2);
                 }
@@ -146,7 +149,7 @@ class UMBHandler
                 // data timeout. execute 3 retries
                 if (result == "Data timeout")
                 {
-                    this.node.log("Data timeout #" + num_retries)
+                    this.#node.log("Data timeout #" + num_retries)
                     num_retries++;
                     data_sent = false;
                     if (num_retries > 3) {
@@ -160,12 +163,12 @@ class UMBHandler
 
         }
 
-        this.node.log("TX end (" + fnct_retval + ")");
+        this.#node.log("TX end (" + fnct_retval + ")");
 
         if(serialport.isOpen) {
             serialport.close();
         }
-        this.node.status({fill:"red",shape:"ring",text:"disconnected"});
+        this.#node.status({fill:"red",shape:"ring",text:"disconnected"});
 
         return fnct_retval;
     }
@@ -175,7 +178,7 @@ class UMBHandler
      * 
      * @param  {Array} umbreq   Raw UMB frame data for the request to be queried
      */
-    async syncTransfer_NET(umbreq)
+    async #syncTransfer_NET(umbreq)
     {
         let fnct_retval = undefined;
         let num_retries = 0;
@@ -183,60 +186,60 @@ class UMBHandler
         let socket_id = l_socket_id++;
         let conTimeout;
 
-        this.node.log("TX start (length:" + umbreq.length + ")");
+        this.#node.log("TX start (length:" + umbreq.length + ")");
 
         while(fnct_retval == undefined) {
 
             // Setup connection
             await new Promise( (resolve, reject) => {
-                this.node.log("[" + socket_id + "] Socket created");
+                this.#node.log("[" + socket_id + "] Socket created");
 
                 // Setup commuication handlers
                 socket.setNoDelay(true);
                 socket.on('error', (ex) => {
-                    this.node.log("[" + socket_id + "] Socket error (" + ex + ")");
-                    this.node.log(ex);
+                    this.#node.log("[" + socket_id + "] Socket error (" + ex + ")");
+                    this.#node.log(ex);
                     reject('Socket error (' + ex + ')');
                 });
                 socket.on('close', (hadError) => {
-                    this.node.log("[" + socket_id + "] Socket closed (Error: " + hadError + ")");
+                    this.#node.log("[" + socket_id + "] Socket closed (Error: " + hadError + ")");
                     reject('Socket closed');
-                    this.node.status({fill:"red",shape:"ring",text:"disconnected"});
+                    this.#node.status({fill:"red",shape:"ring",text:"disconnected"});
                 });
                 socket.on('connect', () => {
                     clearTimeout(conTimeout);
-                    this.node.log("[" + socket_id + "] Socket connected");
-                    this.node.status({fill:"green",shape:"ring",text:"connected"});
+                    this.#node.log("[" + socket_id + "] Socket connected");
+                    this.#node.status({fill:"green",shape:"ring",text:"connected"});
                     socket.setTimeout(umb_consts.UMB_TIMEOUT.TIMEOUT_LONG*2, () => {
-                        this.node.log("Data timeout");
+                        this.#node.log("Data timeout");
                         reject("Data timeout");
                     });
                     socket.write(umbreq);
                 })
                 socket.on('data', (data) => {
-                    this.node.log("[" + socket_id + "] Socket RX: " + data.length + "bytes");
+                    this.#node.log("[" + socket_id + "] Socket RX: " + data.length + "bytes");
                     
-                    this.node.log("Valid input buffer detected");
-                    let parsedFrame = this.umbparser.ParseReadBuf(data);
+                    this.#node.log("Valid input buffer detected");
+                    let parsedFrame = this.#umbparser.ParseReadBuf(data);
         
-                    this.node.log("Parsing status:")
-                    this.node.log("parser status: " + parsedFrame.parserState);
+                    this.#node.log("Parsing status:")
+                    this.#node.log("parser status: " + parsedFrame.parserState);
                     if(parsedFrame.parserState == "finished")
                     {
-                        this.node.log("Frametype: " + parsedFrame.umbframe.type);
-                        this.node.log("Framestatus: " + parsedFrame.umbframe.status);
-                        this.node.log("Framecmd: " + parsedFrame.umbframe.cmd);
+                        this.#node.log("Frametype: " + parsedFrame.umbframe.type);
+                        this.#node.log("Framestatus: " + parsedFrame.umbframe.status);
+                        this.#node.log("Framecmd: " + parsedFrame.umbframe.cmd);
                         resolve(parsedFrame);
                     }
                     else if(parsedFrame.parserState == "processing")
                     {
-                        this.node.log("processing...");
+                        this.#node.log("processing...");
                     }
                 });
 
                 // Prepare timeouts
                 conTimeout = setTimeout(() => {
-                    this.node.log("Connection timeout");
+                    this.#node.log("Connection timeout");
                     reject("Connection timeout");
                 }, 5000);
                 
@@ -254,7 +257,7 @@ class UMBHandler
                     fnct_retval = result;
                 }
                 
-                this.node.status({fill:"red", shape:"ring", text:"disconnected"});
+                this.#node.status({fill:"red", shape:"ring", text:"disconnected"});
                 
             })
             .catch( (error) => {
@@ -265,7 +268,7 @@ class UMBHandler
                 // data timeout. execute 3 retries
                 if (error == "Data timeout")
                 {
-                    this.node.log("Data timeout #" + num_retries)
+                    this.#node.log("Data timeout #" + num_retries)
                     num_retries++;
                     if (num_retries > 3) {
                         fnct_retval = "Data timeout";
@@ -280,7 +283,7 @@ class UMBHandler
 
         socket.end();
 
-        this.node.log("TX end (" + fnct_retval + ")");
+        this.#node.log("TX end (" + fnct_retval + ")");
 
         return fnct_retval;
     }
