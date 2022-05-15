@@ -2,5 +2,5 @@
 
 ## Classdiagram
 
-![Classes](Classes UMB-Parser-Node.png)
+![Classes](./Classes UMB-Parser-Node.png)
 
