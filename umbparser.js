@@ -16,7 +16,7 @@ const FRAME_STATE =
 {
     PAR_SOH : 0,
     PAR_VER : 1,
-    PAR_LO_LSB : 2,
+    PAR_TO_LSB : 2,
     PAR_TO_MSB : 3,
     PAR_FROM_LSB : 4,
     PAR_FROM_MSB : 5,
@@ -54,38 +54,23 @@ const FRAME_TYPE =
 }
 
 /**
- * Default channel name LUT
- */
-const DefaultChannels = new Map(
-    [
-        [100, "Temperature"],
-        [200, "Rel. Humidity"],
-        [300, "Air Pressure"],
-        [400, "Wind Speed"],
-        [405, "Wind Speed"],
-        [500, "Wind Direction"],
-        [600, "Precipiation amount"],
-        [601, "Precipiation amount daily"],
-        [700, "Precipiation tpe"],
-        [900, "Global Radiation"],
-        [903, "Illumination"],
-        [904, "Dawn"],
-        [910, "Sun Direction Azimut"],
-        [911, "Sun Direction Elevation"],
-    ]
-);
-
-/**
  * UMBFrame base class
  */
 class UMBFrame 
 {
+    frametype;
+    payload;
+    cmd;
+    status;
+    crc;
+    framedata;
+
     /**
      * 
      */
     constructor() 
     {
-        this.type = FRAME_TYPE.UNKNOWN;
+        this.frametype = FRAME_TYPE.UNKNOWN;
         this.payload = new Uint8Array();
         this.cmd = 0;
         this.status = -1;
@@ -100,6 +85,10 @@ class UMBFrame
  */
 class UMBFrameData
 {
+    name = "";
+    raw = [];
+    parsed = [];
+
     /**
      * 
      * @param {string} name Name/Type of the parsed frame
@@ -119,12 +108,17 @@ class UMBFrameData
  */
 class MeasChVal
 {
+    #ch_number;
+    #ch_value;
+    #ch_data_type;
+    #ch_status;
+
     /**
      * MeasChVal constructor
-     * @param {int} number Channel number
-     * @param {int} value Channe value
+     * @param {Number} number Channel number
+     * @param {Number} value Channe value
      * @param {String} data_type Data type
-     * @param {int} status Channel status
+     * @param {Number} status Channel status
      */
     constructor(number, data_type, status, dview) 
     {
@@ -253,6 +247,18 @@ class MeasChVal
  */
 class UMBParser 
 {
+    #node;
+    #readBuffer;
+    #parsingIx;
+    #parsingSOHIdx;
+    #parsingETXIdx;
+    #parsingCRC;
+    #payloadCnt;
+    #frameState;
+    #parserState;
+    #payload;
+    #CRC;
+
     /**
      * Basic constructor
      */
@@ -277,7 +283,7 @@ class UMBParser
      * Returns the 8-bit checksum given an array of byte-sized numbers
      * @param {Array} byte_array Byte array to calculate the CRC on
      */
-    calcCRC(byte_array) 
+    #calcCRC(byte_array) 
     {
         return this.CRC.compute(byte_array);
     } 
@@ -285,7 +291,7 @@ class UMBParser
     /**
      * This function resets the internal parserr state
      */
-    resetParser(empty = false) 
+    #resetParser(empty = false) 
     {
         if(empty) 
         {
@@ -342,7 +348,7 @@ class UMBParser
                 //@note: This parser currently only supports UMB-V1.0
                 if(this.readBuffer[this.parsingIdx] == umb_consts.UMBFRAME_VERSION_V10)
                 {
-                    this.frameState = FRAME_STATE.PAR_LO_LSB;
+                    this.frameState = FRAME_STATE.PAR_TO_LSB;
                 }
                 else
                 {
@@ -350,7 +356,7 @@ class UMBParser
                 }
                 break;
     
-            case FRAME_STATE.PAR_LO_LSB:
+            case FRAME_STATE.PAR_TO_LSB:
                 this.frameState = FRAME_STATE.PAR_TO_MSB;
                 break;
             case FRAME_STATE.PAR_TO_MSB:
@@ -432,7 +438,7 @@ class UMBParser
             case FRAME_STATE.PAR_CRC_MSB:
                 this.parsingCRC |= (this.readBuffer[this.parsingIdx] << 8);
 
-                let crc = this.calcCRC(this.readBuffer.slice(0, this.parsingETXIdx+1));
+                let crc = this.#calcCRC(this.readBuffer.slice(0, this.parsingETXIdx+1));
 
                 if(crc == this.parsingCRC)
                 {
@@ -470,7 +476,7 @@ class UMBParser
             if((this.parserState == PAR_STATE.PARSER_ERROR) || (this.parserState == PAR_STATE.PARSER_CRCERROR))
             {
                 /* start parsing at last SOH */
-                this.resetParser();
+                this.#resetParser();
                 break;
             }
         }
@@ -483,36 +489,36 @@ class UMBParser
             parsedFrame.ToAddr = (this.readBuffer[umb_consts.UMBFRAME_IDX.TO_ADDR+1] << 8) | this.readBuffer[umb_consts.UMBFRAME_IDX.TO_ADDR];
             parsedFrame.cmd = this.readBuffer[umb_consts.UMBFRAME_IDX.CMD];
             parsedFrame.payload = Object.assign({}, this.payload);;
-            parsedFrame.crc = this.calcCRC(this.readBuffer.slice(0, this.parsingETXIdx));
+            parsedFrame.crc = this.#calcCRC(this.readBuffer.slice(0, this.parsingETXIdx));
             if(((parsedFrame.FromAddr & 0xF000) == 0xF000) && ((parsedFrame.ToAddr & 0xF000) != 0xF000))
             {
-                parsedFrame.type = FRAME_TYPE.REQUEST;
+                parsedFrame.frametype = FRAME_TYPE.REQUEST;
             }
             else if(((parsedFrame.FromAddr & 0xF000) != 0xF000) && ((parsedFrame.ToAddr & 0xF000) == 0xF000))
             {
-                parsedFrame.type = FRAME_TYPE.RESPONSE;
+                parsedFrame.frametype = FRAME_TYPE.RESPONSE;
                 parsedFrame.status = this.payload[0];
             }
             else
             {
-                parsedFrame.type = FRAME_TYPE.UNKNOWN;
+                parsedFrame.frametype = FRAME_TYPE.UNKNOWN;
             }
 
             // Analyse command
-            if((parsedFrame.type == FRAME_TYPE.RESPONSE) && (parsedFrame.status == umb_consts.ERROR_STATUS.STATUS_OK))
+            if((parsedFrame.frametype == FRAME_TYPE.RESPONSE) && (parsedFrame.status == umb_consts.ERROR_STATUS.STATUS_OK))
             {
                 switch(parsedFrame.cmd)
                 {
                     case umb_consts.UMB_CMD.GETMULTICHANNEL:
-                        parsedFrame.framedata = this.cmdRespChData();
+                        parsedFrame.framedata = this.#cmdRespChData();
                         break;
                     case umb_consts.UMB_CMD.GETDEVINFO:
-                        parsedFrame.framedata = this.cmdRespDevinfo();
+                        parsedFrame.framedata = this.#cmdRespDevinfo();
                         break;
                 }
             }
 
-            this.resetParser(true);
+            this.#resetParser(true);
         }
         
         let retval = {
@@ -530,7 +536,7 @@ class UMBParser
      * This function will return a UMBFrameData() object with
      * detailed information about the parsed frame
      */
-    cmdRespChData()
+    #cmdRespChData()
     {
         let numChannels = this.payload[1];
         let index = 2;
@@ -572,29 +578,31 @@ class UMBParser
     /**
      * Interal function to analyse device info sub-commands
      */
-    cmdRespDevinfo()
+    #cmdRespDevinfo()
     {
+        retval = undefined;
+
         switch(this.payload[1])
         {
             case 0x15:
-                return this.cmdRespDevinfo_ChNum();
+                retval = this.#cmdRespDevinfo_ChNum();
                 break;
             case 0x16:
-                return this.cmdRespDevinfo_ChList();
+                retval = this.#cmdRespDevinfo_ChList();
                 break;
             case 0x30:
-                return this.cmdRespDevinfo_ChDetails();
+                retval = this.#cmdRespDevinfo_ChDetails();
                 break;
         }
 
-        return undefined;
+        return retval;
     }
 
     /**
      * Interal function to analyse device info sub-command to query
      * number of channels
      */
-    cmdRespDevinfo_ChNum()
+    #cmdRespDevinfo_ChNum()
     {
         let chData = new Array();
 
@@ -614,7 +622,7 @@ class UMBParser
      * Interal function to analyse device info sub-command to query
      * number of channels
      */
-    cmdRespDevinfo_ChList()
+    #cmdRespDevinfo_ChList()
     {
         let chList = new Array();
 
@@ -644,7 +652,7 @@ class UMBParser
      * Interal function to analyse device info sub-command to query
      * number of channels
      */
-    cmdRespDevinfo_ChDetails()
+    #cmdRespDevinfo_ChDetails()
     {
         let chDetailsRaw = new Object();
 
@@ -679,6 +687,9 @@ class UMBParser
  */
 class UMBGenerator 
 {
+    #node;
+    #readBuffer;
+    #CRC;
 
     /**
      * UMBGenerator constructor
@@ -697,7 +708,7 @@ class UMBGenerator
      * @param {int} to_addr 2byte UMB address of the destiation device
      * @param {int} from_addr 2byte ZUMB address of the source device
      */
-    createReq(cmd, cmd_ver, to_addr, from_addr) 
+    #createReq(cmd, cmd_ver, to_addr, from_addr) 
     {
         this.readBuffer[umb_consts.UMBFRAME_IDX.SOH] = umb_consts.UMBFRAME_VAL.SOH;
         this.readBuffer[umb_consts.UMBFRAME_IDX.VER] = umb_consts.UMBFRAME_VERSION_V10;
@@ -715,7 +726,7 @@ class UMBGenerator
      * Returns the 8-bit checksum given an array of byte-sized numbers
      * @param {Array} byte_array Binary array to calculate the CRC from
      */
-    calcCRC(byte_array) 
+    #calcCRC(byte_array) 
     {
         return this.CRC.compute(byte_array);
     } 
@@ -725,7 +736,7 @@ class UMBGenerator
      * based on the passed payload
      * @param {int} payloadLength Length of the payload
      */
-    genFrameCRCEnd(payloadLength)
+    #genFrameCRCEnd(payloadLength)
     {
         let crc = 0xFFFF;
         let newFrameLength;
@@ -735,7 +746,7 @@ class UMBGenerator
 
         this.readBuffer[newFrameLength - 4] = umb_consts.UMBFRAME_VAL.ETX;
 
-        crc = this.calcCRC(this.readBuffer.slice(0, newFrameLength - 3))
+        crc = this.#calcCRC(this.readBuffer.slice(0, newFrameLength - 3))
         this.readBuffer[newFrameLength - 2] = (crc >> 8) & 0xFF;
         this.readBuffer[newFrameLength - 3] = crc & 0xFF;
 
@@ -746,7 +757,7 @@ class UMBGenerator
      * Internal method to retrive the payload index according to the given frame type
      * @param {FRAME_TYPE} frame_type Response or Request
      */
-    getPayloadDataIndex(frame_type)
+    #getPayloadDataIndex(frame_type)
     {
         let uDataIdx = (umb_consts.UMBFRAME_IDX.CMDV + 1);
     
@@ -793,8 +804,8 @@ class UMBGenerator
      */
     createMultiChReq(to_addr, channellist) 
     {
-        this.createReq(umb_consts.UMB_CMD.GETMULTICHANNEL, 0x10, to_addr, umb_consts.UMBFRAME_CONTROLLER_ADDR);
-        let payloadIndex = this.getPayloadDataIndex(FRAME_TYPE.REQUEST);
+        this.#createReq(umb_consts.UMB_CMD.GETMULTICHANNEL, 0x10, to_addr, umb_consts.UMBFRAME_CONTROLLER_ADDR);
+        let payloadIndex = this.#getPayloadDataIndex(FRAME_TYPE.REQUEST);
         let payloadLength = 1+channellist.length*2;
 
         let chbuf = new Uint8Array(payloadLength);
@@ -814,7 +825,7 @@ class UMBGenerator
             this.readBuffer[payloadIndex+i] = chbuf[i];
         }
         
-        this.genFrameCRCEnd(payloadLength);
+        this.#genFrameCRCEnd(payloadLength);
 
         return Buffer.from(this.readBuffer);
     }
@@ -828,8 +839,8 @@ class UMBGenerator
      */
     createDevInfoReq(to_addr, subcmd, option=undefined) 
     {
-        this.createReq(umb_consts.UMB_CMD.GETDEVINFO, 0x10, to_addr, umb_consts.UMBFRAME_CONTROLLER_ADDR);
-        let payloadIndex = this.getPayloadDataIndex(FRAME_TYPE.REQUEST);
+        this.#createReq(umb_consts.UMB_CMD.GETDEVINFO, 0x10, to_addr, umb_consts.UMBFRAME_CONTROLLER_ADDR);
+        let payloadIndex = this.#getPayloadDataIndex(FRAME_TYPE.REQUEST);
         let payloadLength = 0;
 
         this.readBuffer[payloadIndex++] = subcmd;
@@ -843,7 +854,7 @@ class UMBGenerator
             });
         }
         
-        this.genFrameCRCEnd(payloadLength);
+        this.#genFrameCRCEnd(payloadLength);
 
         return Buffer.from(this.readBuffer);
     }
