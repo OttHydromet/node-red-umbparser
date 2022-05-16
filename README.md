@@ -4,6 +4,10 @@ This node can be used to query measurement data from Sensors that support the UM
 
 The purpose of this node is to periodically poll and parse measurement data from a device. In UMB the measurement values of a sensor/device is organized in channels. The channels to be queried can be configured in the node settings. Furthermore, as every sensors reports the featured channels generically, the node is able to query the channels, that are offered by the sensor dynamically.
 
+### Requirements
+
+This UMB controller node requires NodeJS version 14.0 or later. 
+
 ## UMB protocol details
 
 UMB stands for Universal Measurement Bus. It basically is a RS485 based hardware
