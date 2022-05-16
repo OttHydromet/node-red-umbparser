@@ -81,13 +81,13 @@ describe('#status frame', function(){
         umbstatus = umbparser.ParseReadBuf(statusOkResponse);
         assert.equal(umbstatus.umbframe.cmd, 0x26);
         assert.equal(umbstatus.umbframe.status, 0x00);
-        assert.equal(umbstatus.umbframe.type, "response");
+        assert.equal(umbstatus.umbframe.frametype, "response");
         assert.equal(umbstatus.parserState, "finished");
     })
     it('Parsing UMB status request with error status E55', function() {
         umbstatus = umbparser.ParseReadBuf(status55Response);
         assert.equal(umbstatus.umbframe.status, 0x55);
-        assert.equal(umbstatus.umbframe.type, "response");
+        assert.equal(umbstatus.umbframe.frametype, "response");
         assert.equal(umbstatus.parserState, "finished");
     })
 });
@@ -100,7 +100,7 @@ describe('#online command', function(){
         umbresponse = umbparser.ParseReadBuf(onlineCmdResponse_2ValOk);
         assert.equal(umbresponse.umbframe.cmd, 0x2F);
         assert.equal(umbresponse.umbframe.status, 0x00);
-        assert.equal(umbresponse.umbframe.type, "response");
+        assert.equal(umbresponse.umbframe.frametype, "response");
         assert.equal(umbresponse.parserState, "finished");
     })
     it('Online command data with 5 ok values', function() {
@@ -134,7 +134,7 @@ describe('#online command', function(){
 
         umbresponse = umbparser.ParseReadBuf(onlineCmdResponse_5ValOk);
         assert.equal(umbresponse.parserState, "finished", "Parser state isn't finished");
-        assert.equal(umbresponse.umbframe.type, "response", "No response frame detected");
+        assert.equal(umbresponse.umbframe.frametype, "response", "No response frame detected");
         assert.equal(umbresponse.umbframe.status, 0x00, "Status !0 OK");
         assert.equal(umbresponse.umbframe.cmd, 0x2F, "wrong command detected");
         assert.equal(Array.isArray(umbresponse.umbframe.framedata.raw), true, "return value isn't an array");
